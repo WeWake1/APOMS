@@ -18,11 +18,28 @@ export default function PhotoViewer({
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const start = useRef({ scale: 1, x: 0, y: 0, dist: 0, cx: 0, cy: 0 });
   const lastTap = useRef(0);
+  const onCloseRef = useRef(onClose);
+  const closedByBack = useRef(false);
 
   useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // The viewer is an overlay, not a route — push a history entry so the
+  // phone's back button closes the photo instead of exiting the app.
+  useEffect(() => {
     document.body.style.overflow = "hidden";
+    window.history.pushState({ photoViewer: true }, "");
+    const onPop = () => {
+      closedByBack.current = true;
+      onCloseRef.current();
+    };
+    window.addEventListener("popstate", onPop);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("popstate", onPop);
+      // Closed via ✕ — consume the entry we pushed so history stays clean.
+      if (!closedByBack.current) window.history.back();
     };
   }, []);
 
