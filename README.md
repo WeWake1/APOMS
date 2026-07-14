@@ -1,126 +1,88 @@
 # PalletTrack 🪵
 
-A dead-simple, mobile-first PWA for a wooden pallet factory: one shared
-board of all **PENDING** orders. Order heads post a photo of each new
-order; the production team gets an instant push notification, makes it,
-and taps **DISPATCHED ✓**. Dispatched orders vanish after 3 days.
+**One shared board of pending orders for a wooden pallet factory — every
+order is a photo, every phone gets pinged, and nothing gets forgotten.**
 
-Replaces a WhatsApp group where order photos get buried and forgotten.
+## The problem
 
----
+A large wooden pallet manufacturer runs its production the way most
+factories actually do: an order comes in, someone photographs the order
+sheet or screenshots the message, and drops it into a WhatsApp group for
+the production team.
 
-## 1. Supabase setup
+It works — until it doesn't. New photos push old ones up and out of
+sight. Nobody knows at a glance how many orders are still open. There's
+no way to mark an order "done" that everyone can see. Orders get buried,
+get made twice, or get forgotten entirely, and the only fix is scrolling
+back through days of chat asking *"did we dispatch this one?"*
 
-1. Create a Supabase project (or use an existing one).
-2. **Schema:** open the SQL editor and run [`supabase/schema.sql`](supabase/schema.sql).
-   This creates the `orders` + `push_subscriptions` tables, the
-   never-resetting order-number sequence, the realtime ping trigger, and
-   both storage buckets (`order-photos`, `order-voices`).
-3. **Edge functions:** install the [Supabase CLI](https://supabase.com/docs/guides/cli), then:
+The team already had Tally and Excel for record-keeping. What they were
+missing was much simpler: a live answer to the question **"what still
+needs to be made, right now?"**
 
-   ```sh
-   supabase link --project-ref YOUR_PROJECT_REF
-   supabase functions deploy send-reminders --no-verify-jwt
-   supabase functions deploy cleanup-dispatched --no-verify-jwt
-   ```
+## The product
 
-4. **Function secrets** (Dashboard → Edge Functions → Secrets, or CLI):
+PalletTrack is a mobile-first web app (PWA) that replaces that WhatsApp
+group with a single screen:
 
-   ```sh
-   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... CRON_SECRET=...
-   ```
+- **A shared pending board.** Every open order is a card — a big photo
+  of the order, a large order number the team can shout across the
+  factory floor, the date, and optionally a customer name and a voice
+  note with extra instructions. A giant counter at the top says exactly
+  how many orders are pending.
+- **Posting an order takes under 10 seconds.** Tap **+ NEW ORDER**, snap
+  or pick a photo, save. The photo *is* the order — no forms, no data
+  entry. Order numbers and dates are assigned automatically.
+- **Everyone knows instantly.** The moment an order is posted, every
+  phone on the team gets a push notification. Scheduled reminders at
+  7:00, 13:00, and 19:00 repeat the pending count so nothing sits
+  unnoticed through a shift.
+- **Done means done — visibly.** When an order ships, anyone taps the
+  big green **DISPATCHED ✓** button and it leaves the board on every
+  phone at once, live, no refresh. A mis-tap is fixed with one **UNDO**
+  from the "Recently dispatched" list.
+- **It cleans up after itself.** Dispatched orders (and their photos and
+  voice notes) are deleted automatically after 3 days. PalletTrack is
+  deliberately not an archive — the books stay in Tally; this board only
+  ever shows what matters *today*.
 
-   `CRON_SECRET` is any long random string (`openssl rand -hex 24`).
-5. **Schedules:** edit [`supabase/cron.sql`](supabase/cron.sql) — replace
-   `<PROJECT_REF>` and `<CRON_SECRET>` — and run it in the SQL editor.
-   This schedules the reminder pushes (7:00 / 13:00 / 19:00 IST) and the
-   daily cleanup of orders dispatched more than 3 days ago.
+## Why it works
 
-## 2. Generate VAPID keys
+The whole design is governed by one rule: **a 55-year-old factory worker
+who barely uses a smartphone must be able to use it without being
+taught.**
 
-```sh
-npx web-push generate-vapid-keys
-```
+That rule shaped everything:
 
-Public key → `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel env) **and**
-`VAPID_PUBLIC_KEY` (Supabase function secret).
-Private key → `VAPID_PRIVATE_KEY` in both places. Never in client code.
+- **One screen.** No menus, no settings, no navigation to learn.
+- **One login, ever.** A shared team PIN, entered once per phone. No
+  accounts, no passwords, no "forgot password".
+- **Huge everything.** Oversized buttons, big type, high contrast, plain
+  taps only — no swipes, long-presses, or hidden gestures.
+- **Two states, not a workflow.** An order is *pending* or it's
+  *dispatched*. There is nothing else to understand.
+- **Installs like an app.** Added to the home screen once, it opens
+  from an icon and pings like any native app — no app store, no updates
+  to manage.
 
-## 3. Deploy to Vercel
+## The impact
 
-1. Push this repo to GitHub and import it in Vercel.
-2. Set every variable from [`.env.example`](.env.example) in Vercel →
-   Project → Settings → Environment Variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-     `SUPABASE_SERVICE_ROLE_KEY` — from Supabase → Settings → API
-   - `APP_PIN` — the team PIN (4–6 digits)
-   - `AUTH_COOKIE_SECRET` — `openssl rand -hex 32`
-   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
-3. Deploy. Done — share the URL with the team.
+For a company moving serious production volume, the change is simple but
+structural: the production team went from *scrolling a chat and hoping*
+to *glancing at one number and one list*. Order heads post an order and
+know the floor has seen it. The floor starts each day with the morning
+summary and closes each order with one green tap that the whole team
+witnesses in real time.
 
-Local development: copy `.env.example` to `.env.local`, fill it in, then
+No order buried. No order made twice. No order forgotten.
 
-```sh
-npm install
-npm run dev
-```
+## Under the hood (briefly)
 
-## 4. 📱 Install guide for the team (forward this on WhatsApp)
+Next.js on Vercel, with Supabase providing the database, photo/voice
+storage, live updates, and scheduled jobs. Instant and scheduled Web
+Push notifications, a service worker for installability, and all data
+access locked behind the server — phones only ever talk to the app, not
+the database. Dispatched orders self-destruct on a daily cleanup job.
 
-> **PalletTrack — install it once, 1 minute** 🪵
->
-> **iPhone:**
-> 1. Open the link in **Safari**
-> 2. Tap the **Share** button (square with arrow ⬆️)
-> 3. Tap **"Add to Home Screen"**, then **Add**
-> 4. Open the app **from the new icon** on your home screen
-> 5. Enter the team PIN
-> 6. Tap the big orange **"🔔 TURN ON NOTIFICATIONS"** button → **Allow**
->
-> **Android:**
-> 1. Open the link in **Chrome**
-> 2. Tap **"Install app"** when it pops up (or menu ⋮ → **"Add to Home screen"**)
-> 3. Open the app from the icon
-> 4. Enter the team PIN
-> 5. Tap **"🔔 TURN ON NOTIFICATIONS"** → **Allow**
->
-> That's it. Every new order will now ping your phone instantly. ✅
-
-⚠️ On iPhone, notifications **only work after installing to the Home
-Screen** (iOS 16.4+) and opening the app from that icon. Android works in
-the browser too, but everyone should install it anyway.
-
-## 5. Resetting order numbers
-
-Order numbers run **1 → 1000** and then automatically wrap back to 1.
-To wipe everything and restart numbering at #1 right now (e.g. after
-testing):
-
-```sh
-npm run reset-orders
-```
-
-This deletes ALL orders (pending too!) plus their photos and voice
-notes, and the next order will be #1. It needs `.env.local` filled in.
-
-## 6. Changing the PIN or reminder times
-
-- **PIN:** change `APP_PIN` in Vercel env vars and redeploy. Everyone's
-  existing login cookie stays valid; only new logins need the new PIN.
-  (To force everyone to re-enter the PIN, also change `AUTH_COOKIE_SECRET`.)
-- **Reminder times:** the schedule lives in pg_cron (UTC!). In the
-  Supabase SQL editor run `select cron.unschedule('send-reminders-noon');`
-  (etc.) and re-run the matching `cron.schedule(...)` block from
-  [`supabase/cron.sql`](supabase/cron.sql) with a new UTC time.
-  IST = UTC + 5:30 → 7:00 IST is `30 1 * * *`.
-
-## How it works (1 paragraph)
-
-Next.js (App Router) on Vercel; all reads/writes go through server
-actions using the Supabase service-role key — the browser never touches
-the database directly. Auth is one shared PIN that sets a signed,
-httpOnly cookie for a year. A Postgres trigger broadcasts an empty
-realtime "ping" whenever orders change, and every open phone refetches —
-so the board is live everywhere. New orders trigger an instant Web Push
-from the server action; scheduled pushes and 3-day cleanup run as
-Supabase Edge Functions on pg_cron.
+Deployment, configuration, and the team install guide live in
+[docs/SETUP.md](docs/SETUP.md).
