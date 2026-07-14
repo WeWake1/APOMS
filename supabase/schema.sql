@@ -1,12 +1,13 @@
 -- PalletTrack schema. Run in the Supabase SQL editor (or via MCP).
 
--- Order numbers come from a dedicated sequence: start at 1, never reset.
-create sequence if not exists public.order_no_seq start 1;
+-- Order numbers come from a dedicated sequence: 1..1000, then wrap back
+-- to 1. Safe with the unique constraint because orders live ~2 weeks max.
+create sequence if not exists public.order_no_seq start 1 maxvalue 1000 cycle;
 
 create table if not exists public.orders (
   id             uuid primary key default gen_random_uuid(),
   order_no       integer not null unique default nextval('public.order_no_seq'),
-  order_date     date not null default current_date,
+  order_date     date not null default ((now() at time zone 'Asia/Kolkata')::date),
   customer_name  text,
   photo_url      text not null,
   voice_url      text,
@@ -37,6 +38,7 @@ create or replace function public.notify_orders_changed()
 returns trigger
 language plpgsql
 security definer
+set search_path = ''
 as $$
 begin
   perform realtime.send('{}'::jsonb, 'changed', 'orders-ping', false);
@@ -44,10 +46,31 @@ begin
 end;
 $$;
 
+-- Not callable through the public RPC API — only fired by the trigger.
+revoke execute on function public.notify_orders_changed() from public, anon, authenticated;
+grant execute on function public.notify_orders_changed() to service_role;
+
 drop trigger if exists orders_changed on public.orders;
 create trigger orders_changed
   after insert or update or delete on public.orders
   for each statement execute function public.notify_orders_changed();
+
+-- Backend reset (used by `npm run reset-orders`): wipe all orders and
+-- restart numbering at #1. Service-role only.
+create or replace function public.reset_orders()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from public.orders where true;
+  alter sequence public.order_no_seq restart with 1;
+end;
+$$;
+
+revoke execute on function public.reset_orders() from public, anon, authenticated;
+grant execute on function public.reset_orders() to service_role;
 
 -- Storage buckets. Public read: file names are unguessable UUIDs and
 -- files live at most ~2 weeks. All writes go through the server.

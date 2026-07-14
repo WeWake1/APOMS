@@ -6,9 +6,9 @@ export const STR = {
 
   // PIN screen
   pinTitle: "Enter Team PIN",
-  pinEnter: "ENTER",
   pinWrong: "Wrong PIN. Try again.",
   pinClear: "CLEAR",
+  pinBackspace: "Delete last digit",
 
   // Header / board
   pending: "PENDING",

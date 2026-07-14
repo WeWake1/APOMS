@@ -5,23 +5,23 @@ import { useRouter } from "next/navigation";
 import { verifyPin } from "@/app/actions";
 import { STR } from "@/lib/strings";
 
-const MAX_LEN = 6;
-
-export default function PinPad() {
+// No ENTER button: the pad verifies automatically the moment the full
+// PIN length is typed. Correct → straight to the board.
+export default function PinPad({ pinLength }: { pinLength: number }) {
   const router = useRouter();
   const [pin, setPin] = useState("");
   const [checking, setChecking] = useState(false);
   const [wrong, setWrong] = useState(false);
 
-  function tap(digit: string) {
+  async function tap(digit: string) {
+    if (checking) return;
     setWrong(false);
-    if (pin.length < MAX_LEN) setPin(pin + digit);
-  }
+    const next = pin + digit;
+    setPin(next);
+    if (next.length < pinLength) return;
 
-  async function submit() {
-    if (pin.length < 4 || checking) return;
     setChecking(true);
-    const res = await verifyPin(pin);
+    const res = await verifyPin(next);
     if (res.ok) {
       router.replace("/");
       router.refresh();
@@ -39,12 +39,12 @@ export default function PinPad() {
 
       {/* PIN dots */}
       <div className="flex h-10 items-center gap-4" aria-live="polite">
-        {Array.from({ length: MAX_LEN }).map((_, i) => (
+        {Array.from({ length: pinLength }).map((_, i) => (
           <span
             key={i}
             className={`h-5 w-5 rounded-full border-3 border-ink ${
               i < pin.length ? "bg-ink" : "bg-transparent"
-            }`}
+            } ${checking ? "animate-pulse" : ""}`}
           />
         ))}
       </div>
@@ -62,7 +62,8 @@ export default function PinPad() {
             key={d}
             type="button"
             onClick={() => tap(d)}
-            className="tag-card press stencil min-h-16 text-3xl"
+            disabled={checking}
+            className="tag-card press stencil min-h-16 text-3xl disabled:opacity-50"
           >
             {d}
           </button>
@@ -70,27 +71,35 @@ export default function PinPad() {
         <button
           type="button"
           onClick={() => {
+            if (checking) return;
             setPin("");
             setWrong(false);
           }}
-          className="tag-card press min-h-16 text-base font-extrabold"
+          disabled={checking}
+          className="tag-card press min-h-16 text-base font-extrabold disabled:opacity-50"
         >
           {STR.pinClear}
         </button>
         <button
           type="button"
           onClick={() => tap("0")}
-          className="tag-card press stencil min-h-16 text-3xl"
+          disabled={checking}
+          className="tag-card press stencil min-h-16 text-3xl disabled:opacity-50"
         >
           0
         </button>
         <button
           type="button"
-          onClick={submit}
-          disabled={pin.length < 4 || checking}
-          className="press min-h-16 rounded-2xl border-3 border-ink bg-go text-base font-extrabold text-white disabled:opacity-40"
+          onClick={() => {
+            if (checking) return;
+            setPin(pin.slice(0, -1));
+            setWrong(false);
+          }}
+          disabled={checking}
+          aria-label={STR.pinBackspace}
+          className="tag-card press min-h-16 text-2xl font-extrabold disabled:opacity-50"
         >
-          {checking ? "…" : STR.pinEnter}
+          ⌫
         </button>
       </div>
     </main>

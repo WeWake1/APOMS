@@ -90,7 +90,20 @@ npm run dev
 Screen** (iOS 16.4+) and opening the app from that icon. Android works in
 the browser too, but everyone should install it anyway.
 
-## 5. Changing the PIN or reminder times
+## 5. Resetting order numbers
+
+Order numbers run **1 → 1000** and then automatically wrap back to 1.
+To wipe everything and restart numbering at #1 right now (e.g. after
+testing):
+
+```sh
+npm run reset-orders
+```
+
+This deletes ALL orders (pending too!) plus their photos and voice
+notes, and the next order will be #1. It needs `.env.local` filled in.
+
+## 6. Changing the PIN or reminder times
 
 - **PIN:** change `APP_PIN` in Vercel env vars and redeploy. Everyone's
   existing login cookie stays valid; only new logins need the new PIN.

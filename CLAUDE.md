@@ -104,8 +104,10 @@ The client only:
 
 - One shared 4–6 digit PIN for the entire team. Stored server-side as
   env var `APP_PIN`. No accounts, no emails, no passwords.
-- First open: a single full-screen PIN entry — huge numeric keypad-style
-  input (`inputmode="numeric"`), one "ENTER" button.
+- First open: a single full-screen PIN entry — huge custom keypad.
+  As-built (client request 2026-07-14): NO enter button — the pad
+  auto-submits when the PIN length is reached (the pin page passes
+  `APP_PIN.length` to the client; acceptable leak for a shared PIN).
 - Correct PIN → set a signed, httpOnly cookie valid ~1 year. The user
   never sees the PIN screen again on that phone.
 - Every server action and page load verifies the cookie server-side.
@@ -396,7 +398,9 @@ Phase 6 — Polish + real-phone QA ⏳
   golden rule.
 - Dispatched ≠ archived: it means "gone in 3 days". This app never
   accumulates data.
-- Order numbers come from a Postgres sequence and never reset or reuse.
+- Order numbers come from a Postgres sequence that cycles 1..1000 (wraps
+  back to 1 after 1000; client decision 2026-07-14). `npm run reset-orders`
+  wipes everything and restarts numbering at 1.
 - Keep every user-facing string in `lib/strings.ts` for easy
   translation later.
 
@@ -406,4 +410,5 @@ Phase 6 — Polish + real-phone QA ⏳
   shift hours if told.
 - UI language defaults to English — switch to Hindi/Gujarati bilingual
   if the team prefers.
-- Order numbers never reset — change to yearly reset only if asked.
+- ~~Order numbers never reset~~ RESOLVED 2026-07-14: client chose
+  1..1000 cycling (sequence `maxvalue 1000 cycle`).
