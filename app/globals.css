@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+  PalletTrack design tokens — "kraft paper & stencil" factory-tag look.
+  High contrast, warm, huge targets. No dark mode by design.
+*/
+@theme {
+  --color-kraft: #ece0c3; /* app background — kraft paper */
+  --color-card: #fdfaf1; /* card face */
+  --color-ink: #26190e; /* warm near-black, borders + text */
+  --color-stamp: #bb3a06; /* burnt orange — PENDING accent */
+  --color-stamp-soft: #f7d9c9;
+  --color-go: #157637; /* DISPATCHED green */
+  --color-go-deep: #0e5527;
+  --color-muted: #6b5c48; /* secondary text (still ≥4.5:1 on card) */
+
+  --font-stencil: var(--font-stencil), sans-serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+}
+
+html {
+  background: var(--color-kraft);
+}
+
+body {
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Chunky shipping-tag card: thick border + hard offset shadow */
+.tag-card {
+  background: var(--color-card);
+  border: 3px solid var(--color-ink);
+  border-radius: 16px;
+  box-shadow: 5px 5px 0 var(--color-ink);
+}
+
+/* Big pressable button feel: the shadow collapses on press */
+.press {
+  box-shadow: 4px 4px 0 var(--color-ink);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+.press:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--color-ink);
+}
+
+/* Stenciled numbers — like spray-painted crate markings */
+.stencil {
+  font-family: var(--font-stencil);
+  letter-spacing: 0.02em;
+}
+
+/* Dashed "stamp" outline used on the pending count */
+.stamp {
+  color: var(--color-stamp);
+  border: 3px dashed var(--color-stamp);
+  border-radius: 12px;
+  transform: rotate(-2deg);
+}
