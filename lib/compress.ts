@@ -1,6 +1,6 @@
 // Client-side photo compression: max ~1600px long edge, JPEG ~80%,
 // so uploads stay fast on factory-floor mobile data.
-export async function compressPhoto(file: File): Promise<Blob> {
+export async function compressPhoto(file: Blob): Promise<Blob> {
   const MAX_EDGE = 1600;
 
   const bitmap = await createImageBitmap(file).catch(() => null);
