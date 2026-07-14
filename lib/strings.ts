@@ -51,6 +51,13 @@ export const STR = {
   uploadError: "Could not save. Check internet and try again.",
   micError: "Could not use microphone. Check permission and try again.",
 
+  // Install app
+  installBanner: "📲 DOWNLOAD APP",
+  installIosHelp:
+    "On iPhone: tap the Share button in Safari, then \"Add to Home Screen\". Open the app from the new icon.",
+  installHelp:
+    "In your browser menu (⋮), tap \"Install app\" or \"Add to Home screen\". Open the app from the new icon.",
+
   // Notifications
   notifyBanner: "🔔 TURN ON NOTIFICATIONS",
   notifyDeniedHelp:

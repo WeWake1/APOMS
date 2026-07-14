@@ -8,6 +8,7 @@ import { STR } from "@/lib/strings";
 import OrderCard from "@/components/OrderCard";
 import DispatchedCard from "@/components/DispatchedCard";
 import NotifyBanner from "@/components/NotifyBanner";
+import InstallBanner from "@/components/InstallBanner";
 import PhotoViewer from "@/components/PhotoViewer";
 
 export default function Board({
@@ -70,6 +71,7 @@ export default function Board({
         </div>
       </header>
 
+      <InstallBanner />
       <NotifyBanner />
 
       {/* Pending list */}
